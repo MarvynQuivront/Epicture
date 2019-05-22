@@ -1,16 +1,17 @@
 import React from 'react';
 import {Image, ScrollView, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import { FileSystem } from 'expo';
 
 export default class LinksScreen extends React.Component {
   static navigationOptions = {
-    title: 'Links',
+    title: 'More',
   };
 
   render() {
     return (
         <View>
           <Text style={styles.optionsTitleText}>
-            Menu
+            {global.username}
           </Text>
 
           <TouchableOpacity
@@ -43,7 +44,7 @@ export default class LinksScreen extends React.Component {
 
           <TouchableOpacity
               style={styles.option}
-              onPress={this._handlePressForums}>
+              onPress={()=>this.props.navigation.navigate('Manage')}>
             <View style={{ flexDirection: 'row' }}>
               <View style={styles.optionIconContainer}>
               </View>

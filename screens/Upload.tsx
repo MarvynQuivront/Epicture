@@ -41,14 +41,14 @@ export default class Upload extends Component {
                 <Button
                     title="Confirm"
                     onPress={() => {
-                        fetch("https://api.imgur.com/3/image", {
+                        fetch("https://api.imgur.com/3/upload", {
                                 method: 'POST',
                                 headers: {
                                     'Authorization':  'Bearer ' + global.token,
+                                    "content-type": "application/json",
                                 },
                             body: JSON.stringify({
                                 "image": this.state.image64,
-                                "type": 'base64',
                             })
                             }
                         )
@@ -56,7 +56,7 @@ export default class Upload extends Component {
                                 console.log(response)
                                 response.json()})
                             .then((responseJson) => {
-
+                                ToastAndroid.show('Image Upload', ToastAndroid.SHORT);
                             }).catch((error) => {
                             console.error(error);
                         });

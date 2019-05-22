@@ -1,9 +1,10 @@
 import React from "react";
-import {FlatList, Image, Text, ToastAndroid, View} from "react-native";
+import {CameraRoll, FlatList, Image, Text, ToastAndroid, View} from "react-native";
 import {Button, SearchBar} from "react-native-elements";
 import {Constants} from "expo";
 import DoubleClick from 'react-native-single-double-click';
 import {Body, Card, CardItem, Icon, Left, Right} from "native-base";
+import { FileSystem } from 'expo';
 
 export default class Favorite extends React.Component {
 
@@ -17,6 +18,26 @@ export default class Favorite extends React.Component {
         page: 0,
         isLoading: false,
         refresh: false,
+    };
+
+
+    pagination = 1;
+    handleLoadMore = () => {
+        this.setState({
+            page: this.state.page + 1
+        }, () => {
+            if (this.state.page == 5) {
+                this.setState({
+                    page: 0
+                })
+                this.searchConfirm(this.pagination)
+                this.pagination++;
+            }
+            this.setState({refreshing: true,})
+            console.log("page"+this.state.page)
+            this.setState({list: this.state.fullList.slice(this.state.page * 10, this.state.page * 10 + 10)})
+            this.setState({refreshing: false,})
+        });
     };
 
     componentDidMount(): void {
@@ -43,6 +64,7 @@ export default class Favorite extends React.Component {
     }
 
     getFav(pag) {
+        this.setState({refreshing: true, page:0})
         fetch("https://api.imgur.com/3/account/" + global.username + "/favorites/" + pag + "/all", {
                 method: 'GET',
                 headers: {
@@ -62,30 +84,32 @@ export default class Favorite extends React.Component {
 
     handleDoubleClick(item, index) {
         this.AddFav(item.id)
+        this.setState({refreshing: true,})
         let newArray = [...this.state.list];
-        newArray[index].link = null
+        newArray = newArray.slice(0,index).concat(newArray.slice(index+1, newArray.length))
         let newArray1 = [...this.state.fullList];
-        newArray1[index].link = null
+        newArray1 = newArray1.slice(0,index).concat(newArray1.slice(index+1, newArray1.length))
         this.setState({fullList: newArray1});
         this.setState({list: newArray});
+        this.setState({refreshing: false,})
     }
 
-    pagination = 1;
+    private download(item) {
+        FileSystem.downloadAsync(
+            item.link,
+            FileSystem.documentDirectory + item.link.split('/')[3]
+        )
+            .then(({uri}) => {
+                CameraRoll.saveToCameraRoll(uri).then((uriGallery) => {
+                    ToastAndroid.show('Finished downloading to ' + uriGallery.toString(), ToastAndroid.SHORT);
 
-    handleLoadMore = () => {
-        this.setState({
-            page: this.state.page + 1
-        }, () => {
-            if (this.state.page == 6) {
-                this.getFav(this.pagination)
-                this.pagination++;
-            }
-            this.setState({refreshing: true,})
-            console.log(this.state.fullList)
-            this.setState({list: this.state.fullList.slice(this.state.page * 10, this.state.page * 10 + 10)})
-            this.setState({refreshing: false,})
-        });
-    };
+                })
+            })
+            .catch(error => {
+                console.error(error);
+            });
+
+    }
 
     render() {
         return (
@@ -124,6 +148,11 @@ export default class Favorite extends React.Component {
                                                     uri: item.link,
                                                 }}
                                             />
+                                        </CardItem>
+                                        <CardItem>
+                                            <Right>
+                                                <Icon name={"md-download"} type={"Ionicons"} onPress={()=>this.download(item)}/>
+                                            </Right>
                                         </CardItem>
                                     </Card>
                                 </DoubleClick>)

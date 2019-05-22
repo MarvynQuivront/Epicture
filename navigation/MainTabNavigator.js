@@ -7,6 +7,7 @@ import HomeScreen from '../screens/HomeScreen';
 import LinksScreen from '../screens/LinksScreen';
 import Favorite from "../screens/Favorite";
 import Upload from "../screens/Upload";
+import ManageUpload from "../screens/ManageUpload";
 
 const HomeStack = createStackNavigator({
   Home: HomeScreen,
@@ -30,7 +31,8 @@ HomeStack.navigationOptions = {
 const LinksStack = createStackNavigator({
   Links: LinksScreen,
   Fav: Favorite,
-  Up: Upload
+  Up: Upload,
+  Manage:ManageUpload
 });
 
 LinksStack.navigationOptions = {

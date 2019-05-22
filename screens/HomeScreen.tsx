@@ -8,14 +8,14 @@ import {
     Text,
     TouchableOpacity,
     View,
-    FlatList, SafeAreaView, ToastAndroid
+    FlatList, SafeAreaView, ToastAndroid, CameraRoll
 } from 'react-native';
 import {Constants} from "expo";
 import {Button, SearchBar} from 'react-native-elements';
 import {Card, CardItem, Icon, Left, Right, Thumbnail, Body} from "native-base";
 import DoubleClick from 'react-native-single-double-click';
-import {Dat, Feed} from "./ImgurFeed";
-import {JsonConvert, OperationMode, ValueCheckingMode} from "json2typescript";
+import {FileSystem} from 'expo';
+
 
 
 const ITEMS_PER_PAGE = 10;
@@ -28,7 +28,7 @@ export default class HomeScreen extends React.Component {
         list: [],
         fullList: [],
         seed: 1,
-        page: 1,
+        page: 0,
         isLoading: false,
         refresh: false,
     };
@@ -49,11 +49,15 @@ export default class HomeScreen extends React.Component {
         this.setState({
             page: this.state.page + 1
         }, () => {
-            if (this.state.page == 6) {
+            if (this.state.page == 5) {
+                this.setState({
+                    page: 0
+                })
                 this.searchConfirm(this.pagination)
                 this.pagination++;
             }
             this.setState({refreshing: true,})
+            console.log("page"+this.state.page)
             this.setState({list: this.state.fullList.slice(this.state.page * 10, this.state.page * 10 + 10)})
             this.setState({refreshing: false,})
         });
@@ -64,7 +68,7 @@ export default class HomeScreen extends React.Component {
 
     handleDoubleClick(item, index) {
         item.images != null ? item.images.map((y) => {
-           this.AddFav(y.id)
+            this.AddFav(y.id)
         }) : this.AddFav(item.id)
         let newArray = [...this.state.list];
         newArray[index].favorite = !newArray[index].favorite;
@@ -135,6 +139,8 @@ export default class HomeScreen extends React.Component {
                                             <Text>{item.title}</Text>
                                         </Left>
                                         <Right>
+                                            <Icon name={"md-download"} type={"Ionicons"}
+                                                  onPress={() => this.download(item)}/>
                                             {
                                                 item.favorite == false ?
                                                     <Icon name={'heart'} style={{color: 'grey'}}/>
@@ -153,8 +159,25 @@ export default class HomeScreen extends React.Component {
     }
 
 
+    private download(item) {
+        FileSystem.downloadAsync(
+            item.link,
+            FileSystem.documentDirectory + item.link.split('/')[3]
+        )
+            .then(({uri}) => {
+                CameraRoll.saveToCameraRoll(uri).then((uriGallery) => {
+                    ToastAndroid.show('Finished downloading to ' + uriGallery.toString(), ToastAndroid.SHORT);
+
+                })
+            })
+            .catch(error => {
+                console.error(error);
+            });
+
+    }
+
     AddFav(id) {
-        this.setState({refreshing: true, page: 1})
+        this.setState({refreshing: true})
         console.log("id", id)
         console.log("token", global.token)
         fetch("https://api.imgur.com/3/image/" + id + "/favorite", {
@@ -173,9 +196,9 @@ export default class HomeScreen extends React.Component {
     }
 
     searchConfirm(pag) {
-        this.setState({refreshing: true, page: 1})
+        this.setState({refreshing: true, page:0})
         console.log("input", this.state.search)
-        console.log("token", this.state.token)
+        console.log("pag", pag)
         fetch("https://api.imgur.com/3/gallery/search/time/all/" + pag + "?q=" + this.state.search, {
                 method: 'GET',
                 headers: {
@@ -185,7 +208,6 @@ export default class HomeScreen extends React.Component {
         )
             .then((response) => response.json())
             .then((responseJson) => {
-                console.log(this.state.page)
                 this.setState({fullList: responseJson.data})
                 this.setState({list: responseJson.data.slice(0, 10)})
                 this.setState({refreshing: false});
